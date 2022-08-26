@@ -15,25 +15,14 @@
       "Scoby\\": "src/scoby/"
     },
     "files": [
-      "src/scoby/Analytics/Client.php",
-      "src/scoby/Analytics/Laravel/Http/Middleware/CountPageView.php",
-      "src/scoby/Analytics/Laravel/Providers/AnalyticsServiceProvider.php"
+      "src/scoby/Analytics/Client.php"
     ]
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Scoby\\Analytics\\Laravel\\Providers\\AnalyticsServiceProvider"
-      ]
-    }
   },
   "require": {
     "psr/log": "^3.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^9.5",
-    "illuminate/support": "^9.25",
-    "illuminate/http": "^9.25"
+    "phpunit/phpunit": "^9.5"
   },
   "scripts": {
     "test": "./vendor/bin/phpunit tests"
