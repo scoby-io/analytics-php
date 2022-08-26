@@ -34,5 +34,8 @@
     "phpunit/phpunit": "^9.5",
     "illuminate/support": "^9.25",
     "illuminate/http": "^9.25"
+  },
+  "scripts": {
+    "test": "./vendor/bin/phpunit tests"
   }
 }

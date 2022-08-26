@@ -50,6 +50,11 @@ class Client
         }
         $this->jarId = $jarId;
         $this->apiEndpoint = "https://" . $this->jarId . ".s3y.io/count";
+
+        $this->ipAddress = Helpers::getIpAddress();
+        $this->userAgent = Helpers::getUserAgent();
+        $this->requestedUrl = Helpers::getRequestedUrl();
+        $this->referringUrl = Helpers::getReferringUrl();
     }
 
     /**
@@ -102,35 +107,14 @@ class Client
         return $this;
     }
 
-    private function gatherRequestData(): array
-    {
-        $userAgent = $this->userAgent ?: $_SERVER["HTTP_USER_AGENT"];
-        $ipAddress = $this->ipAddress ?: $_SERVER["REMOTE_ADDR"];
-        $requestedUrl =
-            $this->requestedUrl ?:
-                (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off"
-                    ? "https"
-                    : "Http") .
-                "://" .
-                $_SERVER["HTTP_HOST"] .
-                $_SERVER["REQUEST_URI"];
-        $referringUrl =
-            $this->referringUrl ?:
-                (!empty($_SERVER["HTTP_REFERER"])
-                    ? $_SERVER["HTTP_REFERER"]
-                    : null);
-
-        return [
-            "ip" => $ipAddress,
-            "url" => $requestedUrl,
-            "ref" => $referringUrl,
-            "ua" => $userAgent,
-        ];
-    }
-
     public function getUrl(): string
     {
-        $params = $this->gatherRequestData();
+        $params = [
+            "ip" => $this->ipAddress,
+            "url" => $this->requestedUrl,
+            "ref" => $this->referringUrl,
+            "ua" => $this->userAgent,
+        ];
         return $this->apiEndpoint . "?" . http_build_query($params);
     }
 
