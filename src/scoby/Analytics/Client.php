@@ -36,9 +36,9 @@ class Client
     private string $requestedUrl;
 
     /**
-     * @var string
+     * @var string | null
      */
-    private string $referringUrl;
+    private string | null $referringUrl;
 
     /**
      * @var array
@@ -173,9 +173,11 @@ class Client
         $params = [
             "vid" => $this->visitorId,
             "url" => $this->requestedUrl,
-            "ref" => $this->referringUrl,
             "ua" => $this->userAgent,
         ];
+        if($this->referringUrl) {
+            $params['ref'] = $this->referringUrl;
+        }
         if ($this->options['collectIpAddress']) {
             $params['ip'] = $this->ipAddress;
         }
@@ -188,7 +190,7 @@ class Client
             $url = $this->getUrl();
             $this->logger?->debug("calling url: " . $url);
             $context = stream_context_create([
-                "Http" => [
+                "http" => [
                     "timeout" => 5,
                 ],
             ]);
