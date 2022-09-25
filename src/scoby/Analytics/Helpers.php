@@ -1,33 +1,70 @@
 <?php namespace Scoby\Analytics;
 
+use Exception;
+
 class Helpers
 {
-    public static function getIpAddress()
+    /**
+     * @throws Exception
+     */
+    public static function getIpAddress(): string
     {
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            return $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        foreach (array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key) {
+            if (array_key_exists($key, $_SERVER) === true) {
+                foreach (array_map('trim', explode(',', $_SERVER[$key])) as $ip) {
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                        return $ip;
+                    }
+                }
+            }
         }
-        return $_SERVER['REMOTE_ADDR'];
+        throw new Exception('Failed to determine IP address automatically. Please supply a valid IP address using the `setIpAddress` method.');
     }
 
-    public static function getUserAgent() {
-        return $_SERVER["HTTP_USER_AGENT"];
+    /**
+     * @throws Exception
+     */
+    public static function getUserAgent(): string
+    {
+        if($_SERVER["HTTP_USER_AGENT"]) {
+            return $_SERVER["HTTP_USER_AGENT"];
+        }
+        throw new Exception('Failed to determine User Agent automatically. Please supply a valid User Agent using the `setUserAgent` method.');
     }
 
-    public static function getRequestedUrl() {
-        return (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off"
+    /**
+     * @throws Exception
+     */
+    public static function getRequestedUrl(): string
+    {
+        $url = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off"
                 ? "https"
-                : "Http") .
+                : "http") .
             "://" .
             $_SERVER["HTTP_HOST"] .
             $_SERVER["REQUEST_URI"];
+        if(filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+        throw new Exception('Failed to determine requested URL automatically. Please supply a valid URL using the `setRequestedUrl` method.');
     }
 
-    public static function getReferringUrl() {
-        return (!empty($_SERVER["HTTP_REFERER"])
+    /**
+     * @throws Exception
+     */
+    public static function getReferringUrl(): string | null
+    {
+        $url = (!empty($_SERVER["HTTP_REFERER"])
             ? $_SERVER["HTTP_REFERER"]
             : null);
+
+        if($url) {
+            if(filter_var($url, FILTER_VALIDATE_URL)) {
+                return $url;
+            }
+            throw new Exception('Failed to determine referring URL automatically. Please supply a valid URL using the `setReferringUrl` method.');
+        }
+
+        return null;
     }
 }
