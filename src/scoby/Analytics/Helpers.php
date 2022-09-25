@@ -12,7 +12,7 @@ class Helpers
         foreach (array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key) {
             if (array_key_exists($key, $_SERVER) === true) {
                 foreach (array_map('trim', explode(',', $_SERVER[$key])) as $ip) {
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                    if (filter_var($ip, FILTER_VALIDATE_IP) !== false) {
                         return $ip;
                     }
                 }
@@ -43,7 +43,7 @@ class Helpers
             "://" .
             $_SERVER["HTTP_HOST"] .
             $_SERVER["REQUEST_URI"];
-        if(filter_var($url, FILTER_VALIDATE_URL)) {
+        if(filter_var($url, FILTER_VALIDATE_URL) !== false) {
             return $url;
         }
         throw new Exception('Failed to determine requested URL automatically. Please supply a valid URL using the `setRequestedUrl` method.');
@@ -59,7 +59,7 @@ class Helpers
             : null);
 
         if($url) {
-            if(filter_var($url, FILTER_VALIDATE_URL)) {
+            if(filter_var($url, FILTER_VALIDATE_URL) !== false) {
                 return $url;
             }
             throw new Exception('Failed to determine referring URL automatically. Please supply a valid URL using the `setReferringUrl` method.');
