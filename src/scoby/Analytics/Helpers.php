@@ -52,7 +52,7 @@ class Helpers
     /**
      * @throws Exception
      */
-    public static function getReferringUrl(): string | null
+    public static function getReferringUrl(): ?string
     {
         $url = (!empty($_SERVER["HTTP_REFERER"])
             ? $_SERVER["HTTP_REFERER"]

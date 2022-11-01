@@ -36,9 +36,9 @@ class Client
     private string $requestedUrl;
 
     /**
-     * @var string | null
+     * @var ?string
      */
-    private string | null $referringUrl;
+    private ?string $referringUrl;
 
     /**
      * @var array
@@ -188,7 +188,7 @@ class Client
     {
         try {
             $url = $this->getUrl();
-            $this->logger?->debug("calling url: " . $url);
+            if($this->logger) $this->logger->debug("calling url: " . $url);
             $context = stream_context_create([
                 "http" => [
                     "timeout" => 5,
@@ -196,17 +196,17 @@ class Client
             ]);
             $headers = get_headers($url, true, $context);
             $statusCode = intval(substr($headers[0], 9, 3));
-            if ($statusCode >= 400) {
-                $this->logger?->error(
+            if ($statusCode !== 204) {
+                if($this->logger) $this->logger->error(
                     "scoby - failed logging page view (" . $statusCode . "): " . $url
                 );
             } else {
-                $this->logger?->info(
+                if($this->logger) $this->logger->info(
                     "scoby - successfully logged page view (" . $statusCode . "): " . $url
                 );
             }
         } catch (Exception $exception) {
-            $this->logger?->error(
+            if($this->logger) $this->logger->error(
                 "scoby - failed logging page view: " . $exception->getMessage()
             );
         }
