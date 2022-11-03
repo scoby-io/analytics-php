@@ -1,6 +1,8 @@
 <?php namespace Scoby\Analytics;
 
 use Exception;
+use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Exception\GuzzleException;
 use Psr\Log\LoggerInterface;
 
 class Client
@@ -13,7 +15,7 @@ class Client
     /**
      * @var string
      */
-    private string $apiEndpoint;
+    private string $apiHost;
 
     /**
      * @var string
@@ -54,6 +56,11 @@ class Client
     private ?LoggerInterface $logger = null;
 
     /**
+     * @var HttpClient
+     */
+    private HttpClient $httpClient;
+
+    /**
      * @param string $jarId
      * @throws Exception
      */
@@ -63,12 +70,14 @@ class Client
             throw new Exception('Cannot initialize scoby analytics without $jarId.');
         }
         $this->jarId = $jarId;
-        $this->apiEndpoint = "https://" . $this->jarId . ".s3y.io/count";
+        $this->apiHost = "https://" . $this->jarId . ".s3y.io";
 
         $this->ipAddress = Helpers::getIpAddress();
         $this->userAgent = Helpers::getUserAgent();
         $this->requestedUrl = Helpers::getRequestedUrl();
         $this->referringUrl = Helpers::getReferringUrl();
+
+        $this->httpClient = new HttpClient();
     }
 
     /**
@@ -181,7 +190,7 @@ class Client
         if ($this->options['collectIpAddress']) {
             $params['ip'] = $this->ipAddress;
         }
-        return $this->apiEndpoint . "?" . http_build_query($params);
+        return $this->apiHost . "/count?" . http_build_query($params);
     }
 
     public function logPageView(): void
@@ -189,13 +198,9 @@ class Client
         try {
             $url = $this->getUrl();
             if($this->logger) $this->logger->debug("calling url: " . $url);
-            $context = stream_context_create([
-                "http" => [
-                    "timeout" => 5,
-                ],
-            ]);
-            $headers = get_headers($url, true, $context);
-            $statusCode = intval(substr($headers[0], 9, 3));
+
+            $res = $this->httpClient->request('GET', $url, ['timeout' => 5]);
+            $statusCode = $res->getStatusCode();
             if ($statusCode !== 204) {
                 if($this->logger) $this->logger->error(
                     "scoby - failed logging page view (" . $statusCode . "): " . $url
@@ -205,7 +210,7 @@ class Client
                     "scoby - successfully logged page view (" . $statusCode . "): " . $url
                 );
             }
-        } catch (Exception $exception) {
+        } catch (Exception|GuzzleException $exception) {
             if($this->logger) $this->logger->error(
                 "scoby - failed logging page view: " . $exception->getMessage()
             );
@@ -218,5 +223,11 @@ class Client
         register_shutdown_function(function () use ($that) {
             $that->logPageView();
         });
+    }
+
+    public function testConnection(): bool
+    {
+        $res = $this->httpClient->request('GET', $this->apiHost . "/status", ['timeout' => 5]);
+        return $res->getStatusCode() === 200;
     }
 }

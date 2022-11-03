@@ -103,4 +103,11 @@ class ClientTest extends TestCase
         $url = $client->getUrl();
         $this->assertMatchesSnapshot($url);
     }
+
+    public function testTestConnection()
+    {
+        $client = new Client("w2dxe");
+        $code = $client->testConnection();
+        $this->assertEquals(200, $code);
+    }
 }
