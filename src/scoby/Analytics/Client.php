@@ -227,7 +227,11 @@ class Client
 
     public function testConnection(): bool
     {
-        $res = $this->httpClient->request('GET', $this->apiHost . "/status", ['timeout' => 5]);
-        return $res->getStatusCode() === 200;
+        try {
+            $res = $this->httpClient->request('GET', $this->apiHost . "/status", ['timeout' => 5]);
+            return $res->getStatusCode() === 200;
+        } catch (GuzzleException $exception) {
+            return false;
+        }
     }
 }

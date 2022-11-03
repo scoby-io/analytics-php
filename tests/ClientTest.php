@@ -108,6 +108,13 @@ class ClientTest extends TestCase
     {
         $client = new Client("w2dxe");
         $code = $client->testConnection();
-        $this->assertEquals(200, $code);
+        $this->assertEquals(true, $code);
+    }
+
+    public function testTestConnectionErrorIsCaught()
+    {
+        $client = new Client("qwefwef");
+        $code = $client->testConnection();
+        $this->assertEquals(false, $code);
     }
 }
