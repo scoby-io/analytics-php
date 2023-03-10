@@ -2,7 +2,7 @@
 
 [scoby](https://www.scoby.io) is an ethical analytics tool that helps you protect your visitors' privacy without sacrificing meaningful metrics. The data is sourced directly from your web server, no cookies are used and no GDPR, ePrivacy and Schrems II consent is required.
 
-Start your free trial today on [https://app.scoby.io/trial](https://app.scoby.io/trial)
+Start your free trial today on [https://app.scoby.io/](https://app.scoby.io/)
 
 #### Did you know?
 scoby is free for non-profit open-source projects.  
@@ -13,12 +13,26 @@ scoby is free for non-profit open-source projects.
 composer require scoby/analytics
 ```
 
+## Prerequisites
+You need two values to instantiate your scoby analytics client: your API key and a salt. 
+The salt is used to anonymize your traffic before it is sent to our servers. 
+You can generate a cryptographically secure using the following command: 
+
+````shell
+openssl rand -base64 32
+````
+
+Please find your API key in your [workspace's settings](https://app.scoby.io) - don't have a workspace yet? Create one for free [here](https://app.scoby.io)
+
 ## Usage
-The client supports synchronous and asynchronous logging of page views
+Instantiate your scoby analytics client using your API key and salt. 
 ```php
 use Scoby\Analytics\Client;
-$client = new Client('INSERT_YOUR_JAR_ID_HERE');
+$client = new Client('INSERT_YOUR_API_KEY_HERE', 'INSERT_YOUR_SALT_HERE');
+```
 
+After that the client supports synchronous and asynchronous logging of page views
+```php
 // count page view synchronously ...
 $client->logPageView(); 
 
@@ -54,13 +68,6 @@ $client->setRequestedUrl('https://example.com/some/path?and=some&query=parameter
 $client->setReferringUrl('https://eyample.com/the/page/that?was=visited&before=yay');
 ```
 
-The IP address of the request is considered personal information in some countries, so by default our client does not send the IP address of the request to our servers.
-If you want to enable this feature, for example, to allow analysis of the countries of your visitors, you can enable it manually:
-```php
-// transmit IP address to scoby servers
-$client->collectIpAddress(true);
-```
-
 ### Visitor ID
 To help you count your visitors as accurately as possible, you can provide a custom identifier, such as an account id, etc. This value is hashed before being sent to our servers to ensure that no personally identifiable information reaches our servers. However, to be on the safe side, you should talk to your data protection officer before using this feature.
 ```php
@@ -73,11 +80,10 @@ Complete example:
 use Scoby\Analytics\Client;
 $client = new Client('INSERT_YOUR_JAR_ID_HERE');
 $client
-    ->collectIpAddress(true)
     ->setIpAddress('1.2.3.4')
-    ->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:103.0) Gecko/20100101 Firefox/103.0');
+    ->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:103.0) Gecko/20100101 Firefox/103.0')
     ->setVisitorId('some-anonymous-identifier')
-    ->setRequestedUrl('https://example.com/some/path?and=some&query=parameters');
+    ->setRequestedUrl('https://example.com/some/path?and=some&query=parameters')
     ->setReferringUrl('https://eyample.com/the/page/that?was=visited&before=yay')
     ->logPageViewAsync();
 ```

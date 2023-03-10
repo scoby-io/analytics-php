@@ -1,5 +1,6 @@
 {
   "name": "scoby/analytics",
+  "version": "1.0.0",
   "description": "Client to measure web traffic in scoby",
   "type": "library",
   "license": "MIT",
@@ -28,5 +29,10 @@
   "require-dev": {
     "phpunit/phpunit": "^9.5",
     "spatie/phpunit-snapshot-assertions": "^4.2"
+  },
+  "config": {
+    "allow-plugins": {
+      "bamarni/composer-bin-plugin": true
+    }
   }
 }

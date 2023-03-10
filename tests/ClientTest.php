@@ -20,40 +20,12 @@ class ClientTest extends TestCase
 
     public function testManualSettingOfParams()
     {
-        $Client = new Client("abc123");
+        $Client = new Client("YWJjMTIzfFE0YWt5MEhXb0t4N28xdXRCRnlRY2x5WnBRdTJZR0J1", "m7cQPvnI8CqwrSDfA1Ynrg==");
         $url = $Client
             ->setIpAddress("1.2.3.4")
             ->setUserAgent("Mozilla/Safari/Chrome")
             ->setReferringUrl("https://www.lalala.com/kokoko?foo=bar")
             ->setRequestedUrl("https://www.schwuppi.de/papapa?bar=baz")
-            ->getUrl();
-
-        $this->assertMatchesSnapshot($url);
-    }
-
-    public function testManualSettingOfParamsIncludingIpAddress()
-    {
-        $Client = new Client("abc123");
-        $url = $Client
-            ->setIpAddress("1.2.3.4")
-            ->setUserAgent("Mozilla/Safari/Chrome")
-            ->setReferringUrl("https://www.lalala.com/kokoko?foo=bar")
-            ->setRequestedUrl("https://www.schwuppi.de/papapa?bar=baz")
-            ->collectIpAddress(true)
-            ->getUrl();
-
-        $this->assertMatchesSnapshot($url);
-    }
-
-    public function testManualSettingOfParamsExcludingIpAddress()
-    {
-        $Client = new Client("abc123");
-        $url = $Client
-            ->setIpAddress("1.2.3.4")
-            ->setUserAgent("Mozilla/Safari/Chrome")
-            ->setReferringUrl("https://www.lalala.com/kokoko?foo=bar")
-            ->setRequestedUrl("https://www.schwuppi.de/papapa?bar=baz")
-            ->collectIpAddress(false)
             ->getUrl();
 
         $this->assertMatchesSnapshot($url);
@@ -61,31 +33,14 @@ class ClientTest extends TestCase
 
     public function testAutomaticCollection()
     {
-        $client = new Client("xyz789");
-        $url = $client->getUrl();
-        $this->assertMatchesSnapshot($url);
-    }
-
-    public function testAutomaticCollectionIncludingIpAddress()
-    {
-        $client = new Client("xyz789");
-        $client->collectIpAddress(true);
-        $url = $client->getUrl();
-        $this->assertMatchesSnapshot($url);
-    }
-
-    public function testAutomaticCollectionExcludingIpAddress()
-    {
-        $client = new Client("xyz789");
-        $client->collectIpAddress(false);
+        $client = new Client("eHl6Nzg5fDhRZWJ5emlYc2lxVUdlSHpYU0R6YWpQaFVVS2R5czJl", "udUJiJwY44O6i2lAos8RmA==");
         $url = $client->getUrl();
         $this->assertMatchesSnapshot($url);
     }
 
     public function testSetVisitorIdManuallyAfterIpAndUserAgent()
     {
-        $client = new Client("xyz789");
-        $client->collectIpAddress(true);
+        $client = new Client("eHl6Nzg5fDhRZWJ5emlYc2lxVUdlSHpYU0R6YWpQaFVVS2R5czJl", "udUJiJwY44O6i2lAos8RmA==");
         $client->setIpAddress('2.3.4.5');
         $client->setUserAgent('the/crazy/useragent');
         $client->setVisitorId('aabbcc1122334455');
@@ -95,8 +50,7 @@ class ClientTest extends TestCase
 
     public function testSetVisitorIdManuallyBeforeIpAndUserAgent()
     {
-        $client = new Client("xyz789");
-        $client->collectIpAddress(true);
+        $client = new Client("eHl6Nzg5fDhRZWJ5emlYc2lxVUdlSHpYU0R6YWpQaFVVS2R5czJl", "udUJiJwY44O6i2lAos8RmA==");
         $client->setVisitorId('bbccddeeffgghh88776655');
         $client->setIpAddress('4.5.6.7');
         $client->setUserAgent('the/crazy/useragent/2.344');
@@ -106,14 +60,14 @@ class ClientTest extends TestCase
 
     public function testTestConnection()
     {
-        $client = new Client("w2dxe");
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
         $code = $client->testConnection();
         $this->assertEquals(true, $code);
     }
 
     public function testTestConnectionErrorIsCaught()
     {
-        $client = new Client("qwefwef");
+        $client = new Client("cXdlZndlZnx0aGlzSXNOb3RWYWlsZFNlY3JldA==", "4FCAkgNnJ8/N0jkB9r58sQ==");
         $code = $client->testConnection();
         $this->assertEquals(false, $code);
     }

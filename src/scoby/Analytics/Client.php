@@ -15,6 +15,16 @@ class Client
     /**
      * @var string
      */
+    private string $apiKey;
+
+    /**
+     * @var string
+     */
+    private string $salt;
+
+    /**
+     * @var string
+     */
     private string $apiHost;
 
     /**
@@ -46,7 +56,6 @@ class Client
      * @var array
      */
     private array $options = [
-        'collectIpAddress' => false,
         'generateVisitorId' => true,
     ];
 
@@ -61,15 +70,23 @@ class Client
     private HttpClient $httpClient;
 
     /**
-     * @param string $jarId
+     * @param string $apiKey
+     * @param string $salt
      * @throws Exception
      */
-    public function __construct(string $jarId)
+    public function __construct(string $apiKey, string $salt)
     {
-        if (empty($jarId)) {
-            throw new Exception('Cannot initialize scoby analytics without $jarId.');
+        if (empty($apiKey)) {
+            throw new Exception('Cannot initialize scoby analytics without $apiKey.');
         }
-        $this->jarId = $jarId;
+
+        if (empty($salt)) {
+            throw new Exception('Cannot initialize scoby analytics without $salt.');
+        }
+
+        $this->apiKey = $apiKey;
+        $this->salt = $salt;
+        $this->jarId = $this->getJarId();
         $this->apiHost = "https://" . $this->jarId . ".s3y.io";
 
         $this->ipAddress = Helpers::getIpAddress();
@@ -78,16 +95,6 @@ class Client
         $this->referringUrl = Helpers::getReferringUrl();
 
         $this->httpClient = new HttpClient();
-    }
-
-    /**
-     * @param bool $collectIpAddress
-     * @return $this
-     */
-    public function collectIpAddress(bool $collectIpAddress): Client
-    {
-        $this->options['collectIpAddress'] = $collectIpAddress;
-        return $this;
     }
 
     /**
@@ -111,7 +118,7 @@ class Client
      */
     public function setVisitorId(string $visitorId): Client
     {
-        $this->visitorId = hash('sha256', implode("|", [$visitorId, $this->jarId]));
+        $this->visitorId = hash_hmac('sha256', implode("|", [$visitorId, $this->jarId]), $this->salt);
         $this->generateVisitorId(false);
         return $this;
     }
@@ -122,8 +129,13 @@ class Client
     private function maybeUpdateVisitorId(): void
     {
         if ($this->options['generateVisitorId']) {
-            $this->visitorId = hash('sha256', implode("|", [$this->ipAddress, $this->userAgent, $this->jarId]));
+            $this->visitorId = hash_hmac('sha256', implode("|", [$this->ipAddress, $this->userAgent, $this->jarId]), $this->salt);
         }
+    }
+
+    private function getJarId(): string {
+        $parts = explode("|", base64_decode($this->apiKey));
+        return $parts[0];
     }
 
     /**
@@ -184,37 +196,42 @@ class Client
             "url" => $this->requestedUrl,
             "ua" => $this->userAgent,
         ];
-        if($this->referringUrl) {
+        if ($this->referringUrl) {
             $params['ref'] = $this->referringUrl;
-        }
-        if ($this->options['collectIpAddress']) {
-            $params['ip'] = $this->ipAddress;
         }
         return $this->apiHost . "/count?" . http_build_query($params);
     }
 
-    public function logPageView(): void
+    public function logPageView(): bool
     {
         try {
             $url = $this->getUrl();
-            if($this->logger) $this->logger->debug("calling url: " . $url);
+            if ($this->logger) $this->logger->debug("calling url: " . $url);
 
-            $res = $this->httpClient->request('GET', $url, ['timeout' => 5]);
+            $res = $this->httpClient->request('GET', $url, [
+                'timeout' => 5,
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->apiKey
+                ]
+            ]);
             $statusCode = $res->getStatusCode();
-            if ($statusCode !== 204) {
-                if($this->logger) $this->logger->error(
-                    "scoby - failed logging page view (" . $statusCode . "): " . $url
-                );
-            } else {
-                if($this->logger) $this->logger->info(
+            if ($statusCode === 204) {
+                if ($this->logger) $this->logger->info(
                     "scoby - successfully logged page view (" . $statusCode . "): " . $url
+                );
+                return true;
+            } else {
+                if ($this->logger) $this->logger->error(
+                    "scoby - failed logging page view (" . $statusCode . "): " . $url
                 );
             }
         } catch (Exception|GuzzleException $exception) {
-            if($this->logger) $this->logger->error(
+            if ($this->logger) $this->logger->error(
                 "scoby - failed logging page view: " . $exception->getMessage()
             );
         }
+
+        return false;
     }
 
     public function logPageViewAsync(): void
