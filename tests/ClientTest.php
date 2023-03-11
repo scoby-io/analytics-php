@@ -58,6 +58,21 @@ class ClientTest extends TestCase
         $this->assertMatchesSnapshot($url);
     }
 
+    public function testGetApiStatus()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $res = $client->getApiStatus();
+        $body = json_decode($res->getBody());
+        $this->assertIsObject($body);
+    }
+
+    public function testGetApiStatusErrorIsCaught()
+    {
+        $this->expectException(\GuzzleHttp\Exception\RequestException::class);
+        $client = new Client("cXdlZndlZnx0aGlzSXNOb3RWYWlsZFNlY3JldA==", "4FCAkgNnJ8/N0jkB9r58sQ==");
+        $client->getApiStatus();
+    }
+
     public function testTestConnection()
     {
         $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");

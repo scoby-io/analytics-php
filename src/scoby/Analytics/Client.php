@@ -3,6 +3,7 @@
 use Exception;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Response;
 use Psr\Log\LoggerInterface;
 
 class Client
@@ -59,6 +60,8 @@ class Client
         'generateVisitorId' => true,
     ];
 
+    private array $requestOptions = [];
+
     /**
      * @var LoggerInterface
      */
@@ -88,6 +91,12 @@ class Client
         $this->salt = $salt;
         $this->jarId = $this->getJarId();
         $this->apiHost = "https://" . $this->jarId . ".s3y.io";
+        $this->requestOptions = [
+            'timeout' => 5,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->apiKey
+            ]
+        ];
 
         $this->ipAddress = Helpers::getIpAddress();
         $this->userAgent = Helpers::getUserAgent();
@@ -208,12 +217,7 @@ class Client
             $url = $this->getUrl();
             if ($this->logger) $this->logger->debug("calling url: " . $url);
 
-            $res = $this->httpClient->request('GET', $url, [
-                'timeout' => 5,
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->apiKey
-                ]
-            ]);
+            $res = $this->httpClient->request('GET', $url, $this->requestOptions);
             $statusCode = $res->getStatusCode();
             if ($statusCode === 204) {
                 if ($this->logger) $this->logger->info(
@@ -245,10 +249,14 @@ class Client
     public function testConnection(): bool
     {
         try {
-            $res = $this->httpClient->request('GET', $this->apiHost . "/status", ['timeout' => 5]);
-            return $res->getStatusCode() === 200;
+            return $this->getApiStatus()->getStatusCode() === 200;
         } catch (GuzzleException $exception) {
             return false;
         }
+    }
+
+    public function getApiStatus(): Response
+    {
+        return $this->httpClient->request('GET', $this->apiHost . "/status", $this->requestOptions);
     }
 }
