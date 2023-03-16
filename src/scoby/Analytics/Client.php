@@ -58,6 +58,7 @@ class Client
      */
     private array $options = [
         'generateVisitorId' => true,
+        'ipBlackLists' => [],
     ];
 
     private array $requestOptions = [];
@@ -107,6 +108,16 @@ class Client
     }
 
     /**
+     * @param string $range
+     * @return $this
+     */
+    public function blacklistIpRange(string $range): Client
+    {
+        $this->options['ipBlackLists'][] = \IPLib\Factory::parseRangeString($range);
+        return $this;
+    }
+
+    /**
      * @param bool $generateVisitorId
      * @return $this
      */
@@ -142,9 +153,34 @@ class Client
         }
     }
 
+    /**
+     * @return string
+     */
     private function getJarId(): string {
         $parts = explode("|", base64_decode($this->apiKey));
         return $parts[0];
+    }
+
+    /**
+     * @return bool
+     */
+    private function isBlockedIp(): bool {
+        try {
+            if(!empty($this->options['ipBlackLists'])) {
+                $address = \IPLib\Factory::parseAddressString($this->ipAddress);
+                foreach($this->options['ipBlackLists'] as $range) {
+                    if($range->contains($address)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            if ($this->logger) $this->logger->warning(
+                "scoby - IP blacklist could not be applied: " . $e->getMessage()
+            );
+        }
+
+        return false;
     }
 
     /**
@@ -197,6 +233,9 @@ class Client
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getUrl(): string
     {
         $this->maybeUpdateVisitorId();
@@ -211,9 +250,19 @@ class Client
         return $this->apiHost . "/count?" . http_build_query($params);
     }
 
+    /**
+     * @return bool
+     */
     public function logPageView(): bool
     {
         try {
+            if($this->isBlockedIp()) {
+                if ($this->logger) $this->logger->info(
+                    "scoby - skipped logging page view for blocked IP address."
+                );
+                return false;
+            }
+
             $url = $this->getUrl();
             if ($this->logger) $this->logger->debug("calling url: " . $url);
 
@@ -238,6 +287,9 @@ class Client
         return false;
     }
 
+    /**
+     * @return void
+     */
     public function logPageViewAsync(): void
     {
         $that = $this;
@@ -246,6 +298,9 @@ class Client
         });
     }
 
+    /**
+     * @return bool
+     */
     public function testConnection(): bool
     {
         try {
@@ -255,6 +310,10 @@ class Client
         }
     }
 
+    /**
+     * @return Response
+     * @throws GuzzleException
+     */
     public function getApiStatus(): Response
     {
         return $this->httpClient->request('GET', $this->apiHost . "/status", $this->requestOptions);

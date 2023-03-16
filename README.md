@@ -78,7 +78,7 @@ Complete example:
 
 ```php
 use Scoby\Analytics\Client;
-$client = new Client('INSERT_YOUR_JAR_ID_HERE');
+$client = new Client('INSERT_YOUR_API_KEY_HERE', 'INSERT_YOUR_SALT_HERE');
 $client
     ->setIpAddress('1.2.3.4')
     ->setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:103.0) Gecko/20100101 Firefox/103.0')
@@ -86,6 +86,30 @@ $client
     ->setRequestedUrl('https://example.com/some/path?and=some&query=parameters')
     ->setReferringUrl('https://eyample.com/the/page/that?was=visited&before=yay')
     ->logPageViewAsync();
+```
+
+### IP Blacklisting
+By default, scoby will not exclude any traffic from your measurements, but we understand that sometimes it is necessary 
+to filter out traffic originating from a range of IP addresses. To do this, we added the `blacklistIpRange` method, 
+which supports wildcard patterns as well as CIDR subnet notation for your convenience. 
+You can add as many IPs, patterns and ranges as you like.
+```php
+$client
+    ->blacklistIpRange('12.34.*.*')
+    ->blacklistIpRange('87.65.43.21/16')
+    ->blacklistIpRange('1.2.3.4')
+    ->blacklistIpRange('::1');
+```
+
+Complete example: 
+
+```php
+use Scoby\Analytics\Client;
+$client = new Client('INSERT_YOUR_API_KEY_HERE', 'INSERT_YOUR_SALT_HERE');
+$client
+    ->blacklistIpRange('12.34.*.*')
+    ->setIpAddress('12.34.56.78') // pattern '12.34.*.*' includes '12.34.56.78'
+    ->logPageView(); // returns: false
 ```
 
 ## Testing

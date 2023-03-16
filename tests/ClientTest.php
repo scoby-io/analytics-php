@@ -86,4 +86,20 @@ class ClientTest extends TestCase
         $code = $client->testConnection();
         $this->assertEquals(false, $code);
     }
+
+    public function testBlacklistIpRangeExcludesIp()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $client->blacklistIpRange('127.0.0.*');
+        $client->setIpAddress('127.0.0.3');
+        $this->assertEquals($client->logPageView(), false);
+    }
+
+    public function testBlacklistIpRangeDoesNotExcludeValidIp()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $client->blacklistIpRange('127.0.0.*');
+        $client->setIpAddress('1.1.1.1');
+        $this->assertEquals($client->logPageView(), true);
+     }
 }
