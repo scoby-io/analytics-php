@@ -23,9 +23,10 @@
     "test": "./vendor/bin/phpunit tests"
   },
   "require": {
-    "psr/log": "^1.1",
-    "guzzlehttp/guzzle": "^7.5",
-    "mlocati/ip-lib": "^1.18"
+    "psr/log": "1.1.4",
+    "guzzlehttp/guzzle": "7.5.0",
+    "mlocati/ip-lib": "1.18.0",
+    "spatie/url": "1.3.5"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5",

@@ -4,6 +4,7 @@ use Exception;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
+use http\Url;
 use Psr\Log\LoggerInterface;
 
 class Client
@@ -11,7 +12,7 @@ class Client
     /**
      * @var string
      */
-    private string $jarId;
+    private string $workspaceId;
 
     /**
      * @var string
@@ -58,7 +59,11 @@ class Client
      */
     private array $options = [
         'generateVisitorId' => true,
-        'ipBlackLists' => [],
+        'ipBlackList' => [],
+        'whitelistedQueryParameters' => ['utm_medium', 'utm_source', 'utm_campaign', 'utm_content', 'utm_term', 'gclid',
+            'gbraid', 'wbraid', 'dclid', 'fbclid', 'msclkid', 'twclid', 'lnkid', 'pinid',
+            'snapid', 'quoraclid', 'ttclid', 'redditclid', 'tblci', 'mgid_click_id', 'cjevent',
+            'awc']
     ];
 
     private array $requestOptions = [];
@@ -90,8 +95,8 @@ class Client
 
         $this->apiKey = $apiKey;
         $this->salt = $salt;
-        $this->jarId = $this->getJarId();
-        $this->apiHost = "https://" . $this->jarId . ".s3y.io";
+        $this->workspaceId = $this->getWorkspaceId();
+        $this->apiHost = "https://" . $this->workspaceId . ".s3y.io";
         $this->requestOptions = [
             'timeout' => 5,
             'headers' => [
@@ -113,7 +118,17 @@ class Client
      */
     public function blacklistIpRange(string $range): Client
     {
-        $this->options['ipBlackLists'][] = \IPLib\Factory::parseRangeString($range);
+        $this->options['ipBlackList'][] = \IPLib\Factory::parseRangeString($range);
+        return $this;
+    }
+
+    /**
+     * @param string $pattern
+     * @return $this
+     */
+    public function whitelistQueryParameter(string $key): Client
+    {
+        $this->options['whitelistedQueryParameters'][] = $key;
         return $this;
     }
 
@@ -138,7 +153,7 @@ class Client
      */
     public function setVisitorId(string $visitorId): Client
     {
-        $this->visitorId = hash_hmac('sha256', implode("|", [$visitorId, $this->jarId]), $this->salt);
+        $this->visitorId = hash_hmac('sha256', implode("|", [$visitorId, $this->workspaceId]), $this->salt);
         $this->generateVisitorId(false);
         return $this;
     }
@@ -149,14 +164,15 @@ class Client
     private function maybeUpdateVisitorId(): void
     {
         if ($this->options['generateVisitorId']) {
-            $this->visitorId = hash_hmac('sha256', implode("|", [$this->ipAddress, $this->userAgent, $this->jarId]), $this->salt);
+            $this->visitorId = hash_hmac('sha256', implode("|", [$this->ipAddress, $this->userAgent, $this->workspaceId]), $this->salt);
         }
     }
 
     /**
      * @return string
      */
-    private function getJarId(): string {
+    private function getWorkspaceId(): string
+    {
         $parts = explode("|", base64_decode($this->apiKey));
         return $parts[0];
     }
@@ -164,12 +180,13 @@ class Client
     /**
      * @return bool
      */
-    private function isBlockedIp(): bool {
+    private function isBlockedIp(): bool
+    {
         try {
-            if(!empty($this->options['ipBlackLists'])) {
+            if (!empty($this->options['ipBlackList'])) {
                 $address = \IPLib\Factory::parseAddressString($this->ipAddress);
-                foreach($this->options['ipBlackLists'] as $range) {
-                    if($range->contains($address)) {
+                foreach ($this->options['ipBlackList'] as $range) {
+                    if ($range->contains($address)) {
                         return true;
                     }
                 }
@@ -181,6 +198,33 @@ class Client
         }
 
         return false;
+    }
+
+    private function getRequestedUrl(): string
+    {
+        $urlObj = \Spatie\Url\Url::fromString($this->requestedUrl);
+
+        $queryParamsBag = $urlObj->getAllQueryParameters();
+
+        foreach ($queryParamsBag as $key => $value) {
+            if (!in_array($key, $this->options['whitelistedQueryParameters'])) {
+                $urlObj = $urlObj->withoutQueryParameter($key);
+            }
+        }
+
+        return (string)$urlObj;
+    }
+
+    private function getReferringUrl(): string
+    {
+        $urlObj = \Spatie\Url\Url::fromString($this->referringUrl);
+
+        $scheme = $urlObj->getScheme();
+        $host = $urlObj->getHost();
+
+        return (string) \Spatie\Url\Url::create()
+            ->withScheme($scheme)
+            ->withHost($host);
     }
 
     /**
@@ -241,11 +285,11 @@ class Client
         $this->maybeUpdateVisitorId();
         $params = [
             "vid" => $this->visitorId,
-            "url" => $this->requestedUrl,
+            "url" => $this->getRequestedUrl(),
             "ua" => $this->userAgent,
         ];
         if ($this->referringUrl) {
-            $params['ref'] = $this->referringUrl;
+            $params['ref'] = $this->getReferringUrl();
         }
         return $this->apiHost . "/count?" . http_build_query($params);
     }
@@ -256,7 +300,7 @@ class Client
     public function logPageView(): bool
     {
         try {
-            if($this->isBlockedIp()) {
+            if ($this->isBlockedIp()) {
                 if ($this->logger) $this->logger->info(
                     "scoby - skipped logging page view for blocked IP address."
                 );
