@@ -110,4 +110,21 @@ class ClientTest extends TestCase
         $url = $client->getUrl();
         $this->assertMatchesSnapshot($url);
     }
+
+    public function test_add_visitor_trait()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $client->addVisitorToSegment('Subscribers');
+        $url = $client->getUrl();
+        $this->assertMatchesSnapshot($url);
+    }
+
+    public function test_add_visitor_traits()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $client->addVisitorToSegment('Women');
+        $client->addVisitorToSegment('Young Adults');
+        $url = $client->getUrl();
+        $this->assertMatchesSnapshot($url);
+    }
 }

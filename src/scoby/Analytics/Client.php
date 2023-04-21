@@ -40,6 +40,11 @@ class Client
     private string $visitorId;
 
     /**
+     * @var string[]
+     */
+    private array $visitorSegments = [];
+
+    /**
      * @var string
      */
     private string $ipAddress;
@@ -60,10 +65,7 @@ class Client
     private array $options = [
         'generateVisitorId' => true,
         'ipBlackList' => [],
-        'whitelistedQueryParameters' => ['utm_medium', 'utm_source', 'utm_campaign', 'utm_content', 'utm_term', 'gclid',
-            'gbraid', 'wbraid', 'dclid', 'fbclid', 'msclkid', 'twclid', 'lnkid', 'pinid',
-            'snapid', 'quoraclid', 'ttclid', 'redditclid', 'tblci', 'mgid_click_id', 'cjevent',
-            'awc']
+        'whitelistedQueryParameters' => ['utm_medium', 'utm_source', 'utm_campaign', 'utm_content', 'utm_term']
     ];
 
     private array $requestOptions = [];
@@ -155,6 +157,16 @@ class Client
     {
         $this->visitorId = hash_hmac('sha256', implode("|", [$visitorId, $this->workspaceId]), $this->salt);
         $this->generateVisitorId(false);
+        return $this;
+    }
+
+    /**
+     * @param string $segment
+     * @return Client
+     */
+    public function addVisitorToSegment(string $segment): Client
+    {
+        $this->visitorSegments[] = $segment;
         return $this;
     }
 
@@ -290,6 +302,9 @@ class Client
         ];
         if ($this->referringUrl) {
             $params['ref'] = $this->getReferringUrl();
+        }
+        if ($this->visitorSegments) {
+            $params['sg'] = implode(",", $this->visitorSegments);
         }
         return $this->apiHost . "/count?" . http_build_query($params);
     }
