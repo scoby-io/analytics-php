@@ -127,4 +127,15 @@ class ClientTest extends TestCase
         $url = $client->getUrl();
         $this->assertMatchesSnapshot($url);
     }
+
+    public function test_set_http_client_from_outside()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $httpClient = new \GuzzleHttp\Client([
+            'verify' => false
+        ]);
+        $this->assertNotEquals($client->getHttpClient(), $httpClient);
+        $client->setHttpClient($httpClient);
+        $this->assertEquals($client->getHttpClient(), $httpClient);
+    }
 }

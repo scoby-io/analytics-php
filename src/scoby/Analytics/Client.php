@@ -4,7 +4,6 @@ use Exception;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
-use http\Url;
 use Psr\Log\LoggerInterface;
 
 class Client
@@ -376,5 +375,22 @@ class Client
     public function getApiStatus(): Response
     {
         return $this->httpClient->request('GET', $this->apiHost . "/status", $this->requestOptions);
+    }
+
+    /**
+     * @param HttpClient $client
+     * @return $this
+     */
+    public function getHttpClient(): HttpClient {
+        return $this->httpClient;
+    }
+
+    /**
+     * @param HttpClient $client
+     * @return $this
+     */
+    public function setHttpClient(HttpClient $client) {
+        $this->httpClient = $client;
+        return $this;
     }
 }
