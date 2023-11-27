@@ -1,5 +1,6 @@
 <?php
 
+
 use PHPUnit\Framework\TestCase;
 use Scoby\Analytics\Client;
 use Spatie\Snapshots\MatchesSnapshots;
@@ -66,11 +67,11 @@ class ClientTest extends TestCase
         $this->assertIsObject($body);
     }
 
-    public function test_get_api_status_error_is_caught()
+    public function test_get_api_status_error_is_reported()
     {
-        $this->expectException(\GuzzleHttp\Exception\RequestException::class);
         $client = new Client("cXdlZndlZnx0aGlzSXNOb3RWYWlsZFNlY3JldA==", "4FCAkgNnJ8/N0jkB9r58sQ==");
-        $client->getApiStatus();
+        $reponse  = $client->getApiStatus();
+        $this->assertEquals($reponse->getStatusCode(), 404);
     }
 
     public function test_test_connection()
@@ -80,7 +81,7 @@ class ClientTest extends TestCase
         $this->assertEquals(true, $code);
     }
 
-    public function test_test_connectio_error_is_caught()
+    public function test_connection_error_is_caught()
     {
         $client = new Client("cXdlZndlZnx0aGlzSXNOb3RWYWlsZFNlY3JldA==", "4FCAkgNnJ8/N0jkB9r58sQ==");
         $code = $client->testConnection();
@@ -137,5 +138,13 @@ class ClientTest extends TestCase
         $this->assertNotEquals($client->getHttpClient(), $httpClient);
         $client->setHttpClient($httpClient);
         $this->assertEquals($client->getHttpClient(), $httpClient);
+    }
+
+    public function test_setting_logger_works()
+    {
+        $client = new Client("dzJkeGV8TDlST1hMaXozMVFtd2o4U3hmQVIzQWxNOFh1dWZZTno=", "4GKyOvsn5GVUG+REbzspEA==");
+        $logger = new \Scoby\Analytics\Logger();
+        $client->setLogger($logger);
+        $client->logPageView();
     }
 }

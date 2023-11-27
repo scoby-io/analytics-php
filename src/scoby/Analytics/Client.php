@@ -1,10 +1,9 @@
 <?php namespace Scoby\Analytics;
 
 use Exception;
-use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7\Response;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
+use Http\Discovery\Psr18Client;
 
 class Client
 {
@@ -67,17 +66,15 @@ class Client
         'whitelistedQueryParameters' => ['utm_medium', 'utm_source', 'utm_campaign', 'utm_content', 'utm_term']
     ];
 
-    private array $requestOptions = [];
-
     /**
      * @var LoggerInterface
      */
     private ?LoggerInterface $logger = null;
 
     /**
-     * @var HttpClient
+     * @var
      */
-    private HttpClient $httpClient;
+    private  $httpClient;
 
     /**
      * @param string $apiKey
@@ -98,19 +95,11 @@ class Client
         $this->salt = $salt;
         $this->workspaceId = $this->getWorkspaceId();
         $this->apiHost = "https://" . $this->workspaceId . ".s3y.io";
-        $this->requestOptions = [
-            'timeout' => 5,
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->apiKey
-            ]
-        ];
 
         $this->ipAddress = Helpers::getIpAddress();
         $this->userAgent = Helpers::getUserAgent();
         $this->requestedUrl = Helpers::getRequestedUrl();
         $this->referringUrl = Helpers::getReferringUrl();
-
-        $this->httpClient = new HttpClient();
     }
 
     /**
@@ -324,7 +313,11 @@ class Client
             $url = $this->getUrl();
             if ($this->logger) $this->logger->debug("calling url: " . $url);
 
-            $res = $this->httpClient->request('GET', $url, $this->requestOptions);
+            $client = $this->getHttpClient();
+            $request = $client->createRequest('GET', $url);
+            $request->withAddedHeader('Authorization', 'Bearer ' . $this->apiKey);
+            $res = $client->sendRequest($request);
+
             $statusCode = $res->getStatusCode();
             if ($statusCode === 204) {
                 if ($this->logger) $this->logger->info(
@@ -336,7 +329,7 @@ class Client
                     "scoby - failed logging page view (" . $statusCode . "): " . $url
                 );
             }
-        } catch (Exception|GuzzleException $exception) {
+        } catch (Exception|ClientExceptionInterface $exception) {
             if ($this->logger) $this->logger->error(
                 "scoby - failed logging page view: " . $exception->getMessage()
             );
@@ -358,38 +351,42 @@ class Client
 
     /**
      * @return bool
+     * @throws ClientExceptionInterface
      */
     public function testConnection(): bool
     {
         try {
             return $this->getApiStatus()->getStatusCode() === 200;
-        } catch (GuzzleException $exception) {
+        } catch (Exception|ClientExceptionInterface $exception) {
             return false;
         }
     }
 
     /**
-     * @return Response
-     * @throws GuzzleException
+     * @throws Exception
+     * @throws ClientExceptionInterface
      */
-    public function getApiStatus(): Response
+    public function getApiStatus()
     {
-        return $this->httpClient->request('GET', $this->apiHost . "/status", $this->requestOptions);
+        $client = $this->getHttpClient();
+        $request = $client->createRequest('GET', $this->apiHost . "/status");
+        return $client->sendRequest($request);
     }
 
-    /**
-     * @param HttpClient $client
-     * @return $this
-     */
-    public function getHttpClient(): HttpClient {
+    public function getHttpClient()
+    {
+        if(empty($this->httpClient)) {
+            $this->httpClient = new Psr18Client();
+        }
         return $this->httpClient;
     }
 
     /**
-     * @param HttpClient $client
+     * @param  $client
      * @return $this
      */
-    public function setHttpClient(HttpClient $client) {
+    public function setHttpClient($client): Client
+    {
         $this->httpClient = $client;
         return $this;
     }

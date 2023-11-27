@@ -14,6 +14,17 @@ Scoby is available for free for non-profit open-source projects.
 composer require scoby/analytics
 ```
 
+## Requirements
+The Scoby Analytics client uses the `php-http/discovery` package to automatically find and use installed PSR-18 compliant HTTP clients. This change allows for greater flexibility and interoperability with various HTTP client implementations.
+
+To use Scoby Analytics, you need to have a PSR-18 compliant HTTP client installed in your project. If you don't have a specific client, the package will fallback to using Guzzle if it's available.
+
+**Important**: If no PSR-18 compatible adapter is found, an error will be logged, typically stating `No PSR-18 clients found. Make sure to install a package providing "psr/http-client-implementation". Example: "php-http/guzzle7-adapter"`. In such cases, you should manually install a PSR-18 compliant client. As a convenient fallback, you can install Guzzle by running:
+
+```
+composer require guzzlehttp/guzzle
+```
+
 ## Prerequisites
 You need two values to instantiate your scoby analytics client: your API key and a salt. 
 The salt is used to anonymize your traffic before it is sent to our servers. 
@@ -45,6 +56,34 @@ Disclaimer: PHP scripts are always blocking. The `logPageViewAsync` executes aft
 
 The client will automatically scan the super global `$_SERVER` variable for all data it needs to work properly. All values can be overridden with fluent setters:
 
+### Enabling Debugging with a PSR-3 Logger
+To facilitate debugging and gain more insights into the operations of the Scoby Analytics client, you can use the `$client->setLogger` method. This method accepts a PSR-3 compliant logger instance, allowing you to integrate your preferred logging solution.
+
+PSR-3 is a standard that defines a common interface for logging libraries in PHP, ensuring compatibility and flexibility. By using a PSR-3 logger, you can easily log messages of various severity levels, such as debug, info, warning, and error.
+
+To enable logging, simply pass a PSR-3 compliant logger instance to the `setLogger` method. Here's an example using Monolog, a popular logging library:
+
+```php
+use Scoby\Analytics\Client;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+// Create a logger instance
+$logger = new Logger('name');
+$logger->pushHandler(new StreamHandler('path/to/your.log', Logger::WARNING));
+
+// Instantiate your Scoby Analytics client
+$client = new Client('INSERT_YOUR_API_KEY_HERE', 'INSERT_YOUR_SALT_HERE');
+
+// Set the logger
+$client->setLogger($logger);
+
+// Now you can use your client as usual
+```
+
+With the logger set, you will receive log messages that can help you debug issues or understand the client's behavior better.  
+
+
 ### IP Address
 ```php
 // set IP address manually
@@ -68,7 +107,6 @@ $client->setRequestedUrl('https://example.com/some/path?and=some&query=parameter
 // set referrer manually
 $client->setReferringUrl('https://eyample.com/the/page/that?was=visited&before=yay');
 ```
-
 
 ### Visitor Segments
 Visitor segmentation is a powerful tool for improving your website's performance and user engagement. By dividing your audience into different segments based on their common characteristics or behaviors, you can better understand their needs and tailor your website content, marketing messages, and user experience to meet their specific preferences.
