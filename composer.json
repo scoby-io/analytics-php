@@ -1,6 +1,6 @@
 {
   "name": "scoby/analytics",
-  "version": "2.0.0-alpha",
+  "version": "2.0.1-alpha",
   "description": "Client to measure web traffic in scoby",
   "type": "library",
   "license": "MIT",
